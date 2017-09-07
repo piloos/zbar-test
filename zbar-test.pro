@@ -17,14 +17,6 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 
 SOURCES += main.cpp
 
-LIBS += -lunified-logger
+LIBS +=
 
 HEADERS += 
-
-#for satisfying Qt Creator
-contains(BUILDROOT, yes): {
-}
-else {
-    INCLUDEPATH += external/unified-logger/include
-    INCLUDEPATH += external
-}

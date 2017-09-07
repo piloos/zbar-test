@@ -1,4 +1,3 @@
 config BR2_PACKAGE_ZBAR_TEST
   bool "zbar-test"
-  select BR2_PACKAGE_LIBUNIFIED_LOGGER
   select BR2_PACKAGE_QT5BASE
