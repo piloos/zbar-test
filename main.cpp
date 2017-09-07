@@ -1,7 +1,7 @@
 #include <QCoreApplication>
 #include <QTimer>
-
 #include <QCommandLineParser>
+#include <QSize>
 
 #include <iostream>
 #include <fstream>
@@ -10,7 +10,7 @@
 
 using namespace std;
 
-zbar::Image read_file(string filename)
+zbar::Image read_file(string filename, QSize framesize)
 {
     ifstream file(filename, ios::binary | ios::ate);
     streamsize size = file.tellg();
@@ -20,17 +20,22 @@ zbar::Image read_file(string filename)
     file.read(data, size);
     file.close();
 
-    zbar::Image image(800, 600, "RGB3", data, size);
+    int expected_size = framesize.width() * framesize.height() * 3;
+    if (expected_size != size) {
+        cout << endl << "WARNING: the detected file size is " << size
+             << " bytes, while we were expecting " << expected_size << " bytes according to the specified framesize." << endl << endl;
+    }
+
+    zbar::Image image(framesize.width(), framesize.height(), "RGB3", data, size);
 
     cout << "Image size is " << image.get_data_length() << " bytes" << endl;
 
     return image;
 }
 
-static void analyse_file(string filename)
+static void analyse_file(string filename, QSize framesize)
 {
-    zbar::Image image = read_file(filename);
-
+    zbar::Image image = read_file(filename, framesize);
 
     // Scanner can only convert Y800 or GRAY image formats
     zbar::Image image_converted = image.convert("Y800");
@@ -40,24 +45,15 @@ static void analyse_file(string filename)
 
     image_scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
 
-    zbar::SymbolSet results_before = image_scanner.get_results();
-    zbar::SymbolSet image_results_before = image_converted.get_symbols();
-
-    cout << "Image scanner results before scanning contains " << results_before.get_size() << " elements" << endl;
-    cout << "Image contains " << image_results_before.get_size() << " symbols before scanning" << endl;
-
     int result = image_scanner.scan(image_converted);
 
-    cout << "Result of scanning: " << result << endl;
+    cout << "# Scanning results: " << result << endl;
 
-    zbar::SymbolSet results_after = image_scanner.get_results();
-    zbar::SymbolSet image_results_after = image_converted.get_symbols();
+    zbar::SymbolSet results = image_converted.get_symbols();
 
-    cout << "Image scanner results after scanning contains " << results_after.get_size() << " elements" << endl;
-    cout << "Image contains " << image_results_after.get_size() << " symbols after scanning" << endl;
+    cout << "Image contains " << results.get_size() << " symbols after scanning" << endl;
 
-
-    for (zbar::SymbolIterator it = image_results_after.symbol_begin(); it != image_results_after.symbol_end(); ++it) {
+    for (zbar::SymbolIterator it = results.symbol_begin(); it != results.symbol_end(); ++it) {
         cout << "  Symbol found: " << it->get_data() << endl;
     }
 
@@ -71,8 +67,11 @@ int main(int argc, char *argv[])
 
     QCommandLineParser parser;
 
-    QCommandLineOption file_option(QString("file"), QString("Raw image file to analyse."), QString("filename"));
+    QCommandLineOption file_option(QString("file"), QString("Raw image file (packed 3-byte RGB data) to analyse."), QString("filename"));
     parser.addOption(file_option);
+
+    QCommandLineOption size_option(QString("framesize"), QString("Size of the image"), QString("<width>x<height>"), QString("800x600"));
+    parser.addOption(size_option);
 
     parser.addHelpOption();
 
@@ -80,14 +79,12 @@ int main(int argc, char *argv[])
 
     string filename = parser.value(file_option).toStdString();
 
+    QStringList l = parser.value(size_option).split("x");
+    QSize framesize(l.at(0).toInt(), l.at(1).toInt());
+
     cout << "Going to analyse file " << filename << endl;
 
-    analyse_file(filename);
-
-    //QTimer::singleShot(0, &app, [](){ cout << "Main thread started" << endl; });
-    //QTimer::singleShot(1000, &app, &QCoreApplication::quit);
-
-    //app.exec();
+    analyse_file(filename, framesize);
 
     cout << "ZBAR test application finished" << endl;
 }
