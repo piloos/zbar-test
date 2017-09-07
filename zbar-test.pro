@@ -1,4 +1,4 @@
-QT += core gui widgets
+QT += core
 
 CONFIG += c++14
 
@@ -17,7 +17,8 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 
 SOURCES += main.cpp
 
-LIBS += -lzbar
+# Force static linking to zbar, but any library concatenated to LIBS should be dynamic
+LIBS += -static -lzbar -Wl,-Bdynamic
 
 HEADERS += 
 
