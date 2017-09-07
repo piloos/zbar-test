@@ -31,9 +31,36 @@ static void analyse_file(string filename)
 {
     zbar::Image image = read_file(filename);
 
-    zbar::Image image_converted = image.convert("YU12");
 
-    cout << "Converted to YU12, the image is only " << image_converted.get_data_length() << " bytes" << endl;
+    // Scanner can only convert Y800 or GRAY image formats
+    zbar::Image image_converted = image.convert("Y800");
+    cout << "Converted to Y800, the image size is " << image_converted.get_data_length() << " bytes" << endl;
+
+    zbar::ImageScanner image_scanner;
+
+    image_scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
+
+    zbar::SymbolSet results_before = image_scanner.get_results();
+    zbar::SymbolSet image_results_before = image_converted.get_symbols();
+
+    cout << "Image scanner results before scanning contains " << results_before.get_size() << " elements" << endl;
+    cout << "Image contains " << image_results_before.get_size() << " symbols before scanning" << endl;
+
+    int result = image_scanner.scan(image_converted);
+
+    cout << "Result of scanning: " << result << endl;
+
+    zbar::SymbolSet results_after = image_scanner.get_results();
+    zbar::SymbolSet image_results_after = image_converted.get_symbols();
+
+    cout << "Image scanner results after scanning contains " << results_after.get_size() << " elements" << endl;
+    cout << "Image contains " << image_results_after.get_size() << " symbols after scanning" << endl;
+
+
+    for (zbar::SymbolIterator it = image_results_after.symbol_begin(); it != image_results_after.symbol_end(); ++it) {
+        cout << "  Symbol found: " << it->get_data() << endl;
+    }
+
 }
 
 int main(int argc, char *argv[])
@@ -57,10 +84,10 @@ int main(int argc, char *argv[])
 
     analyse_file(filename);
 
-    QTimer::singleShot(0, &app, [](){ cout << "Main thread started" << endl; });
-    QTimer::singleShot(1000, &app, &QCoreApplication::quit);
+    //QTimer::singleShot(0, &app, [](){ cout << "Main thread started" << endl; });
+    //QTimer::singleShot(1000, &app, &QCoreApplication::quit);
 
-    app.exec();
+    //app.exec();
 
     cout << "ZBAR test application finished" << endl;
 }
