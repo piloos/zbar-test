@@ -17,6 +17,13 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 
 SOURCES += main.cpp
 
-LIBS +=
+LIBS += -lzbar
 
 HEADERS += 
+
+#for satisfying Qt Creator
+contains(BUILDROOT, yes): {
+}
+else {
+    INCLUDEPATH += external
+}
