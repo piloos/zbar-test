@@ -74,6 +74,8 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
 
             zbar::ImageScanner image_scanner;
 
+            // only look for QR codes: disable all + enable QR
+            image_scanner.set_config((zbar::zbar_symbol_type_e) 0, zbar::ZBAR_CFG_ENABLE, 0);
             image_scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
 
             t_now = timer.nsecsElapsed();
