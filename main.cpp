@@ -3,6 +3,7 @@
 #include <QCommandLineParser>
 #include <QSize>
 #include <QElapsedTimer>
+#include <QImage>
 
 #include <iostream>
 #include <fstream>
@@ -69,15 +70,15 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
         {
             t0 = timer.nsecsElapsed();
 
-            zbar::Image image(framesize.width(), framesize.height(), "RGB3", data, size);
+            QImage qimage((unsigned char*) data, framesize.width(), framesize.height(), QImage::Format_RGB888);
 
             quint64 t_now = timer.nsecsElapsed();
             t1 = t_now - t0;
             t0 = t_now;
 
             // Scanner can only convert Y800 or GRAY image formats
-            zbar::Image image_converted = image.convert("Y800");
-            //cout << "Converted to Y800, the image size is " << image_converted.get_data_length() << " bytes" << endl;
+            QImage qimage_converted = qimage.convertToFormat(QImage::Format_Grayscale8);
+            zbar::Image image_converted(qimage_converted.width(), qimage_converted.height(), "Y800", qimage_converted.bits(), qimage_converted.byteCount());
 
             t_now = timer.nsecsElapsed();
             t2 = t_now - t0;
