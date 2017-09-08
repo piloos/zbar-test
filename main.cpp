@@ -140,7 +140,11 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
                         .arg(symbol_area.left()).arg(symbol_area.top()).arg(symbol_area.width()).arg(symbol_area.height()).toStdString() << endl;
                 if (!search_area_found) {
                     cout << "Applying new search area" << endl;
-                    QRect symbol_area_with_margins = symbol_area.marginsAdded({50, 50, 50, 50});
+                    QRect symbol_area_with_margins = symbol_area.marginsAdded({5, 5, 5, 5});
+
+                    //zbar fails on widths/heights which are not 4-byte aligned
+                    symbol_area_with_margins.setWidth((symbol_area_with_margins.width() / 4 + 1) * 4);
+                    symbol_area_with_margins.setHeight((symbol_area_with_margins.height() / 4 + 1) * 4);
                     search_area = symbol_area_with_margins;
                     search_area_found = true;
                 }
