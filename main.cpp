@@ -55,6 +55,13 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
     qint64 t_total_min = 9223372036854775807;
     qint64 t_total_avg = 0;
 
+
+    zbar::ImageScanner image_scanner;
+
+    // only look for QR codes: disable all + enable QR
+    image_scanner.set_config((zbar::zbar_symbol_type_e) 0, zbar::ZBAR_CFG_ENABLE, 0);
+    image_scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
+
     for (int i = 0; i < nr_cycles; ++i) {
 
         qint64 t_start = timer.nsecsElapsed();
@@ -71,12 +78,6 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
             quint64 t_now = timer.nsecsElapsed();
             t1 = t_now - t0;
             t0 = t_now;
-
-            zbar::ImageScanner image_scanner;
-
-            // only look for QR codes: disable all + enable QR
-            image_scanner.set_config((zbar::zbar_symbol_type_e) 0, zbar::ZBAR_CFG_ENABLE, 0);
-            image_scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
 
             t_now = timer.nsecsElapsed();
             t2 = t_now - t0;
