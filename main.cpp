@@ -11,7 +11,7 @@
 
 using namespace std;
 
-zbar::Image read_file(string filename, QSize framesize)
+pair<char*, int> read_file(string filename)
 {
     ifstream file(filename, ios::binary | ios::ate);
     streamsize size = file.tellg();
@@ -21,22 +21,20 @@ zbar::Image read_file(string filename, QSize framesize)
     file.read(data, size);
     file.close();
 
+    return pair<char*, int>(data, (int) size);
+}
+
+static void analyse_file(string filename, QSize framesize, int nr_cycles)
+{
+    pair<char*, int> file_info = read_file(filename);
+    char* data = file_info.first;
+    int size = file_info.second;
+
     int expected_size = framesize.width() * framesize.height() * 3;
     if (expected_size != size) {
         cout << endl << "WARNING: the detected file size is " << size
              << " bytes, while we were expecting " << expected_size << " bytes according to the specified framesize." << endl << endl;
     }
-
-    zbar::Image image(framesize.width(), framesize.height(), "RGB3", data, size);
-
-    cout << "Image size is " << image.get_data_length() << " bytes" << endl;
-
-    return image;
-}
-
-static void analyse_file(string filename, QSize framesize, int nr_cycles)
-{
-    zbar::Image image = read_file(filename, framesize);
 
     QElapsedTimer timer;
 
@@ -71,13 +69,15 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
         {
             t0 = timer.nsecsElapsed();
 
-            // Scanner can only convert Y800 or GRAY image formats
-            zbar::Image image_converted = image.convert("Y800");
-            //cout << "Converted to Y800, the image size is " << image_converted.get_data_length() << " bytes" << endl;
+            zbar::Image image(framesize.width(), framesize.height(), "RGB3", data, size);
 
             quint64 t_now = timer.nsecsElapsed();
             t1 = t_now - t0;
             t0 = t_now;
+
+            // Scanner can only convert Y800 or GRAY image formats
+            zbar::Image image_converted = image.convert("Y800");
+            //cout << "Converted to Y800, the image size is " << image_converted.get_data_length() << " bytes" << endl;
 
             t_now = timer.nsecsElapsed();
             t2 = t_now - t0;
