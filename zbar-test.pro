@@ -18,7 +18,7 @@ QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 SOURCES += main.cpp
 
 # Force static linking to zbar, but any library concatenated to LIBS should be dynamic
-LIBS += -static -lzbar -Wl,-Bdynamic
+LIBS += -Wl,-Bstatic -lzbar -Wl,-Bdynamic
 
 HEADERS += 
 
