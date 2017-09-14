@@ -28,30 +28,19 @@ static QRect get_area(const zbar::Symbol& symbol)
     return rect;
 }
 
-static pair<char*, int> read_file(string filename)
+static QImage read_file(const string& filename)
 {
-    ifstream file(filename, ios::binary | ios::ate);
-    streamsize size = file.tellg();
-    file.seekg(0, ios::beg);
-
-    char* data = new char[size];
-    file.read(data, size);
-    file.close();
-
-    return pair<char*, int>(data, (int) size);
+    QImage image;
+    image.load(QString::fromStdString(filename));
+    QImage image_rgb888 = image.convertToFormat(QImage::Format_RGB888);
+    cout << QString("Image loaded into memory: size %1x%2, byte count: %3")
+            .arg(image_rgb888.width()).arg(image_rgb888.height()).arg(image_rgb888.byteCount()).toStdString() << endl;
+    return image_rgb888;
 }
 
-static void analyse_file(string filename, QSize framesize, int nr_cycles)
+static void analyse_file(const string& filename, int nr_cycles)
 {
-    pair<char*, int> file_info = read_file(filename);
-    char* data = file_info.first;
-    int size = file_info.second;
-
-    int expected_size = framesize.width() * framesize.height() * 3;
-    if (expected_size != size) {
-        cout << endl << "WARNING: the detected file size is " << size
-             << " bytes, while we were expecting " << expected_size << " bytes according to the specified framesize." << endl << endl;
-    }
+    QImage qimage = read_file(filename);
 
     QElapsedTimer timer;
 
@@ -73,7 +62,7 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
     zbar::ImageScanner image_scanner;
 
     // only look for QR codes: disable all + enable QR
-    image_scanner.set_config((zbar::zbar_symbol_type_e) 0, zbar::ZBAR_CFG_ENABLE, 0);
+    image_scanner.set_config((zbar::zbar_symbol_type_t) 0, zbar::ZBAR_CFG_ENABLE, 0);
     image_scanner.set_config(zbar::ZBAR_QRCODE, zbar::ZBAR_CFG_ENABLE, 1);
 
     QRect search_area;
@@ -87,8 +76,6 @@ static void analyse_file(string filename, QSize framesize, int nr_cycles)
 
         {
             t0 = timer.nsecsElapsed();
-
-            QImage qimage((unsigned char*) data, framesize.width(), framesize.height(), QImage::Format_RGB888);
 
             //qimage.save(QString("original_image_%1.png").arg(i));
 
@@ -198,11 +185,8 @@ int main(int argc, char *argv[])
 
     QCommandLineParser parser;
 
-    QCommandLineOption file_option(QString("file"), QString("Raw image file (packed 3-byte RGB data) to analyse."), QString("filename"));
+    QCommandLineOption file_option(QString("file"), QString("Image file to analyse (png/jpeg/...)"), QString("filename"));
     parser.addOption(file_option);
-
-    QCommandLineOption size_option(QString("framesize"), QString("Size of the image"), QString("<width>x<height>"), QString("800x600"));
-    parser.addOption(size_option);
 
     QCommandLineOption repeat_option(QString("repeat"), QString("Repeat procedure x times"), QString("number"), QString("1"));
     parser.addOption(repeat_option);
@@ -213,14 +197,12 @@ int main(int argc, char *argv[])
 
     string filename = parser.value(file_option).toStdString();
 
-    QStringList l = parser.value(size_option).split("x");
-    QSize framesize(l.at(0).toInt(), l.at(1).toInt());
 
     int nr_cycles = parser.value(repeat_option).toInt();
 
     cout << "Going to analyse file '" << filename << "' "<< nr_cycles << " time(s)" << endl;
 
-    analyse_file(filename, framesize, nr_cycles);
+    analyse_file(filename, nr_cycles);
 
     cout << "ZBAR test application finished" << endl;
 }
