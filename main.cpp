@@ -79,13 +79,22 @@ static void analyse_file(const string& filename, int nr_cycles)
 
             //qimage.save(QString("original_image_%1.png").arg(i));
 
+            float sizing_factor = 1.0;
+
             QImage qimage_cropped;
             if (search_area_found) {
                 //crop image to search area
                 qimage_cropped = qimage.copy(search_area);
             }
             else {
-                qimage_cropped = qimage;
+                if (qimage.width() > 960) {
+                    qimage_cropped = qimage.scaledToWidth(960, Qt::FastTransformation);
+                    sizing_factor = static_cast<float>(qimage.width()) / static_cast<float>(qimage_cropped.width());
+                    cout << "Downscaled image with factor " << sizing_factor << endl;
+                }
+                else {
+                    qimage_cropped = qimage;
+                }
             }
 
             quint64 t_now = timer.nsecsElapsed();
@@ -127,7 +136,13 @@ static void analyse_file(const string& filename, int nr_cycles)
                         .arg(symbol_area.left()).arg(symbol_area.top()).arg(symbol_area.width()).arg(symbol_area.height()).toStdString() << endl;
                 if (!search_area_found) {
                     cout << "Applying new search area" << endl;
-                    QRect symbol_area_with_margins = symbol_area.marginsAdded({5, 5, 5, 5});
+                    QRect symbol_area_stretched = symbol_area;
+                    symbol_area_stretched.translate(symbol_area.x() * (sizing_factor - 1), symbol_area.y() * (sizing_factor - 1));
+                    symbol_area_stretched.setWidth(symbol_area.width() * sizing_factor);
+                    symbol_area_stretched.setHeight(symbol_area.height() * sizing_factor);
+                    cout << QString("Symbol_area_resized: top left (%1, %2), size: %3x%4")
+                            .arg(symbol_area_stretched.left()).arg(symbol_area_stretched.top()).arg(symbol_area_stretched.width()).arg(symbol_area_stretched.height()).toStdString() << endl;
+                    QRect symbol_area_with_margins = symbol_area_stretched.marginsAdded({5, 5, 5, 5});
 
                     //zbar fails on widths/heights which are not 4-byte aligned
                     symbol_area_with_margins.setWidth((symbol_area_with_margins.width() / 4 + 1) * 4);
