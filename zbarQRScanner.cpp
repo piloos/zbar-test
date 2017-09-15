@@ -83,7 +83,7 @@ bool ZbarQRScanner::scan_image(const QImage &image)
         clear_results();
         return true;
     }
-    else {        
+    else {
         im.symbol = *(zbar_image.get_symbols().symbol_begin());
         update_results(im);
         return true;
