@@ -12,6 +12,8 @@
 
 #include <zbar.h>
 
+#include <zbarQRScanner.h>
+
 using namespace std;
 
 static QRect get_area(const zbar::Symbol& symbol)
@@ -38,10 +40,8 @@ static QImage read_file(const string& filename)
     return image_rgb888;
 }
 
-static void analyse_file(const string& filename, int nr_cycles)
+static void analyse_image_old_school(const QImage& qimage, int nr_cycles)
 {
-    QImage qimage = read_file(filename);
-
     QElapsedTimer timer;
 
     timer.start();
@@ -190,6 +190,54 @@ static void analyse_file(const string& filename, int nr_cycles)
     cout << "t5 min " << t5_min / 1000 << " us, avg " << t5_avg / 1000 << " us" << endl;
     cout << "total min " << t_total_min / 1000 << " us, avg " << t_total_avg / 1000 << " us" << endl;
 
+}
+
+static void analyse_image_new_school(const QImage& qimage, int nr_cycles)
+{
+    QElapsedTimer timer;
+
+    timer.start();
+
+    qint64 t_total_min = 9223372036854775807;
+    qint64 t_total_avg = 0;
+
+    ZbarQRScanner scanner;
+
+    for (int i = 0; i < nr_cycles; ++i) {
+
+        qint64 t_start = timer.nsecsElapsed();
+
+        scanner.scan_image(qimage);
+
+        if (scanner.locked_on_QR_code_area()) {
+            cout << "QR symbol found: " << scanner.last_QR_code_content_found() << endl;
+        }
+        else {
+            cout << "No QR symbol found" << endl;
+        }
+
+        qint64 t_total = timer.nsecsElapsed() - t_start;
+
+        if (t_total < t_total_min) t_total_min = t_total;
+        t_total_avg += t_total;
+    }
+
+    t_total_avg = t_total_avg / nr_cycles;
+
+    cout << "total min " << t_total_min / 1000 << " us, avg " << t_total_avg / 1000 << " us" << endl;
+}
+
+static void analyse_file(const string& filename, int nr_cycles)
+{
+    QImage qimage = read_file(filename);
+
+    cout << endl << "Old school way of analyzing:" << endl;
+
+    analyse_image_old_school(qimage, nr_cycles);
+
+    cout << endl << "New school way of analyzing:" << endl;
+
+    analyse_image_new_school(qimage, nr_cycles);
 }
 
 int main(int argc, char *argv[])

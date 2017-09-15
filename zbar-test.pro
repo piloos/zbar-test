@@ -15,12 +15,14 @@ QMAKE_CXXFLAGS += -Wextra -Werror -Weffc++
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]/QtCore
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+           zbarQRScanner.cpp \
 
 # Force static linking to zbar, but any library concatenated to LIBS should be dynamic
 LIBS += -Wl,-Bstatic -lzbar -Wl,-Bdynamic
 
-HEADERS += 
+HEADERS += QRScanner.h \
+           zbarQRScanner.h \
 
 #for satisfying Qt Creator
 contains(BUILDROOT, yes): {
